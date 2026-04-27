@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Heart, MessageCircle, Send, Bookmark, MoreHorizontal, 
   Search, Camera, Home, Compass, PlaySquare, User, Moon, Sun, 
-  Languages, PawPrint, PlusCircle
+  Languages, PawPrint, PlusCircle, X, Image, Smile, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
@@ -50,6 +50,32 @@ const DUMMY_POSTS: Post[] = [
     isLiked: false,
     time: '1 gün önce'
   }
+];
+
+interface DmConversation {
+  id: string;
+  username: string;
+  avatar: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+  messages: { id: string; text: string; fromMe: boolean; time: string }[];
+}
+
+const DUMMY_DMS: DmConversation[] = [
+  { id: 'd1', username: 'pasha_the_goldie', avatar: 'https://picsum.photos/seed/golden_retriever_avatar/100/100', lastMessage: 'Parkta buluşalım mı? 🐾', time: '2dk', unread: 2, messages: [
+    { id: 'm1', text: 'Selam! Nasılsın?', fromMe: false, time: '10:00' },
+    { id: 'm2', text: 'İyiyim sen? 🐶', fromMe: true, time: '10:01' },
+    { id: 'm3', text: 'Parkta buluşalım mı? 🐾', fromMe: false, time: '10:05' },
+  ]},
+  { id: 'd2', username: 'muezza_cat', avatar: 'https://picsum.photos/seed/tabby_cat_avatar/100/100', lastMessage: 'Fotoğrafı çok güzel! 😻', time: '1sa', unread: 0, messages: [
+    { id: 'm1', text: 'O fotoğrafı nereden çektiniz?', fromMe: true, time: '09:00' },
+    { id: 'm2', text: 'Fotoğrafı çok güzel! 😻', fromMe: false, time: '09:30' },
+  ]},
+  { id: 'd3', username: 'boncuk_parrot', avatar: 'https://picsum.photos/seed/colorful_bird_avatar/100/100', lastMessage: 'Teşekkürler! 🦜', time: '3sa', unread: 1, messages: [
+    { id: 'm1', text: 'Boncuk çok tatlı!', fromMe: true, time: '08:00' },
+    { id: 'm2', text: 'Teşekkürler! 🦜', fromMe: false, time: '08:15' },
+  ]},
 ];
 
 const STORIES = [
@@ -108,6 +134,43 @@ export default function PetstagramPage() {
       }
       return post;
     }));
+  };
+
+  // DM states
+  const [isDmOpen, setIsDmOpen] = useState(false);
+  const [dmConversations, setDmConversations] = useState(DUMMY_DMS);
+  const [activeDm, setActiveDm] = useState<DmConversation | null>(null);
+  const [dmInput, setDmInput] = useState('');
+
+  // New Post states
+  const [isNewPostOpen, setIsNewPostOpen] = useState(false);
+  const [newPostCaption, setNewPostCaption] = useState('');
+  const [newPostImageUrl, setNewPostImageUrl] = useState('');
+
+  const handleSendDm = () => {
+    if (!dmInput.trim() || !activeDm) return;
+    const newMsg = { id: `m${Date.now()}`, text: dmInput, fromMe: true, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
+    setDmConversations(prev => prev.map(c => c.id === activeDm.id ? { ...c, messages: [...c.messages, newMsg], lastMessage: dmInput, time: 'şimdi' } : c));
+    setActiveDm(prev => prev ? { ...prev, messages: [...prev.messages, newMsg], lastMessage: dmInput } : null);
+    setDmInput('');
+  };
+
+  const handleNewPost = () => {
+    if (!newPostCaption.trim()) return;
+    const newPost: Post = {
+      id: `${Date.now()}`,
+      username: 'ben_petstagram',
+      avatar: 'https://picsum.photos/seed/my_pet_avatar/100/100',
+      image: newPostImageUrl || `https://picsum.photos/seed/${Date.now()}/600/600`,
+      likes: 0,
+      caption: newPostCaption,
+      isLiked: false,
+      time: language === 'tr' ? 'az önce' : language === 'en' ? 'just now' : 'ahora mismo'
+    };
+    setPosts(prev => [newPost, ...prev]);
+    setNewPostCaption('');
+    setNewPostImageUrl('');
+    setIsNewPostOpen(false);
   };
 
   return (
