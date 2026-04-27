@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { ArrowLeft, MapPin, Phone, Globe, Clock, Info, Search, Menu, X, Navigation } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, Globe, Clock, Info, Search, Menu, X, Navigation, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import 'leaflet/dist/leaflet.css';
@@ -244,6 +244,22 @@ export default function MapPage() {
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark' || document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
 
   const filteredPoints = useMemo(() => {
     return SAMPLE_POINTS.filter(point => 
@@ -264,25 +280,31 @@ export default function MapPage() {
   };
 
   return (
-    <div className="h-screen w-full flex bg-gray-50 overflow-hidden">
+    <div className={`h-screen w-full flex overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
       {/* Sidebar */}
       <motion.aside 
         initial={false}
         animate={{ width: isSidebarOpen ? '380px' : '0px' }}
-        className="bg-white border-r border-gray-200 flex flex-col relative z-[1002] shadow-xl overflow-hidden"
+        className={`flex flex-col relative z-[1002] shadow-xl overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-gray-900 border-r border-gray-800' : 'bg-white border-r border-gray-200'}`}
       >
-        <div className="p-6 border-b border-gray-100 shrink-0">
+        <div className={`p-6 shrink-0 ${isDarkMode ? 'border-b border-gray-800' : 'border-b border-gray-100'}`}>
           <div className="flex items-center gap-3 mb-6">
             <button 
               onClick={() => navigate('/')}
-              className="p-2 hover:bg-amber-50 rounded-full transition-colors text-amber-600"
+              className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-blue-900/50 text-blue-400' : 'hover:bg-amber-50 text-amber-600'}`}
             >
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">Zootropolis</h1>
-              <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest leading-none">Pati Haritası</p>
+              <h1 className={`text-xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Zootropolis</h1>
+              <p className={`text-[10px] font-black uppercase tracking-widest leading-none ${isDarkMode ? 'text-blue-400' : 'text-amber-500'}`}>Pati Haritası</p>
             </div>
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`ml-auto p-2.5 rounded-full transition-all shadow-sm hover:shadow-md active:scale-95 ${isDarkMode ? 'bg-blue-950/80 border-2 border-blue-800 text-blue-300 hover:bg-blue-900' : 'bg-white/80 border-2 border-amber-100 text-amber-700 hover:bg-amber-50'}`}
+            >
+              {isDarkMode ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-500" />}
+            </button>
           </div>
 
           <div className="relative group">
@@ -294,7 +316,7 @@ export default function MapPage() {
               placeholder="Mekan, tür veya adres ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-transparent focus:border-amber-500/20 focus:bg-white pl-12 pr-4 py-3.5 rounded-2xl text-sm font-semibold outline-none transition-all placeholder:text-gray-400"
+              className={`w-full pl-12 pr-4 py-3.5 rounded-2xl text-sm font-semibold outline-none transition-all border-2 ${isDarkMode ? 'bg-gray-800 border-transparent focus:border-blue-500/30 focus:bg-gray-750 text-white placeholder:text-gray-500' : 'bg-gray-50 border-transparent focus:border-amber-500/20 focus:bg-white placeholder:text-gray-400'}`}
             />
             {searchTerm && (
               <button 
@@ -308,7 +330,7 @@ export default function MapPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 scroller-hide">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2 mb-2">
+          <p className={`text-[10px] font-black uppercase tracking-[0.2em] px-2 mb-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
             {filteredPoints.length} Sonuç Bulundu
           </p>
           
@@ -316,7 +338,7 @@ export default function MapPage() {
             <button
               key={point.id}
               onClick={() => setSelectedPoint(point)}
-              className={`w-full text-left p-4 rounded-2xl transition-all border-2 group ${selectedPoint?.id === point.id ? 'bg-amber-50 border-amber-500/30' : 'bg-white border-transparent hover:border-gray-200'}`}
+              className={`w-full text-left p-4 rounded-2xl transition-all border-2 group ${selectedPoint?.id === point.id ? (isDarkMode ? 'bg-blue-900/30 border-blue-500/30' : 'bg-amber-50 border-amber-500/30') : (isDarkMode ? 'bg-gray-800 border-transparent hover:border-gray-700' : 'bg-white border-transparent hover:border-gray-200')}`}
             >
               <div className="flex items-start justify-between mb-2">
                 <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter ${selectedPoint?.id === point.id ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
@@ -324,16 +346,16 @@ export default function MapPage() {
                 </span>
                 <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm`} style={{ backgroundColor: getMarkerColor(point.category) }}></div>
               </div>
-              <h3 className={`font-bold text-gray-900 group-hover:text-amber-600 transition-colors ${selectedPoint?.id === point.id ? 'text-amber-600' : ''}`}>
+              <h3 className={`font-bold transition-colors ${isDarkMode ? `text-white group-hover:text-blue-400 ${selectedPoint?.id === point.id ? 'text-blue-400' : ''}` : `text-gray-900 group-hover:text-amber-600 ${selectedPoint?.id === point.id ? 'text-amber-600' : ''}`}`}>
                 {point.name}
               </h3>
               <div className="mt-2 space-y-1">
-                <div className="flex items-start gap-2 text-xs text-gray-500">
+                <div className={`flex items-start gap-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <MapPin size={14} className="shrink-0 mt-0.5 opacity-50" />
                   <span className="line-clamp-2">{point.address}</span>
                 </div>
                 {point.hours && (
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <div className={`flex items-center gap-2 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                     <Clock size={12} className="shrink-0 opacity-50" />
                     <span>{point.hours}</span>
                   </div>
@@ -344,11 +366,11 @@ export default function MapPage() {
 
           {filteredPoints.length === 0 && (
             <div className="text-center py-12">
-              <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-gray-100 text-gray-400'}`}>
                 <Search size={24} />
               </div>
-              <p className="text-sm font-bold text-gray-900">Sonuç Bulunamadı</p>
-              <p className="text-xs text-gray-500 mt-1">Aramanı değiştirmeyi dene.</p>
+              <p className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Sonuç Bulunamadı</p>
+              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Aramanı değiştirmeyi dene.</p>
             </div>
           )}
         </div>
@@ -372,10 +394,17 @@ export default function MapPage() {
           zoomControl={false}
         >
           <MapController selectedPoint={selectedPoint} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          {isDarkMode ? (
+            <TileLayer
+              attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
+          ) : (
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          )}
           <ZoomControl position="bottomright" />
 
           {filteredPoints.map(point => {
@@ -414,11 +443,11 @@ export default function MapPage() {
             >
               <div className="p-1 min-w-[200px]">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${isDarkMode ? 'bg-blue-900 text-blue-300' : 'bg-amber-100 text-amber-700'}`}>
                     {selectedPoint.category}
                   </span>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2">{selectedPoint.name}</h3>
+                <h3 className={`font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedPoint.name}</h3>
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-start gap-2">
                     <MapPin size={14} className="mt-0.5 text-gray-400 shrink-0" />
@@ -454,7 +483,7 @@ export default function MapPage() {
                   onClick={() => {
                     window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedPoint.lat},${selectedPoint.lng}`, '_blank');
                   }}
-                  className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95"
+                  className={`w-full mt-4 text-white font-bold py-3 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 shadow-lg active:scale-95 ${isDarkMode ? 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'}`}
                 >
                   <Navigation size={14} />
                   Yol Tarifi Al
