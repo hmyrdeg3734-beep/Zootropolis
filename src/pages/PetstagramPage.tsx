@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Heart, MessageCircle, Send, Bookmark, MoreHorizontal, 
   Search, Camera, Home, Compass, PlaySquare, User, Moon, Sun, 
-  Languages, PawPrint, PlusCircle, X, Image, Smile, ChevronLeft
+  Languages, PawPrint, PlusCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
@@ -23,18 +23,18 @@ const DUMMY_POSTS: Post[] = [
   {
     id: '1',
     username: 'pasha_the_goldie',
-    avatar: 'https://picsum.photos/seed/golden_retriever_avatar/100/100',
-    image: 'https://picsum.photos/seed/golden_retriever_dog/600/600',
+    avatar: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=120&h=120',
+    image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=800&h=800',
     likes: 1240,
-    caption: 'Üsküdar sahilinde sabah yürüyüşü keyfi! 🐾🌊 #goldenretriever #üsküdar',
+    caption: 'Anadolu Yakası sahilinde sabah yürüyüşü keyfi! 🐾🌊 #goldenretriever #anadoluyakası',
     isLiked: false,
     time: '2 saat önce'
   },
   {
     id: '2',
     username: 'muezza_cat',
-    avatar: 'https://picsum.photos/seed/tabby_cat_avatar/100/100',
-    image: 'https://picsum.photos/seed/sleeping_cat/600/600',
+    avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=120&h=120',
+    image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=800&h=800',
     likes: 856,
     caption: 'Güneşi gördüm, hemen yayıldım. ☀️🐈 #catlife #sunnyday',
     isLiked: true,
@@ -43,8 +43,8 @@ const DUMMY_POSTS: Post[] = [
   {
     id: '3',
     username: 'boncuk_parrot',
-    avatar: 'https://picsum.photos/seed/colorful_bird_avatar/100/100',
-    image: 'https://picsum.photos/seed/parrot_bird/600/600',
+    avatar: 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=120&h=120',
+    image: 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=800&h=800',
     likes: 320,
     caption: 'Yeni oyuncağım çok eğlenceli! 🦜💎 #parrot #birdsofinstagram',
     isLiked: false,
@@ -52,39 +52,13 @@ const DUMMY_POSTS: Post[] = [
   }
 ];
 
-interface DmConversation {
-  id: string;
-  username: string;
-  avatar: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  messages: { id: string; text: string; fromMe: boolean; time: string }[];
-}
-
-const DUMMY_DMS: DmConversation[] = [
-  { id: 'd1', username: 'pasha_the_goldie', avatar: 'https://picsum.photos/seed/golden_retriever_avatar/100/100', lastMessage: 'Parkta buluşalım mı? 🐾', time: '2dk', unread: 2, messages: [
-    { id: 'm1', text: 'Selam! Nasılsın?', fromMe: false, time: '10:00' },
-    { id: 'm2', text: 'İyiyim sen? 🐶', fromMe: true, time: '10:01' },
-    { id: 'm3', text: 'Parkta buluşalım mı? 🐾', fromMe: false, time: '10:05' },
-  ]},
-  { id: 'd2', username: 'muezza_cat', avatar: 'https://picsum.photos/seed/tabby_cat_avatar/100/100', lastMessage: 'Fotoğrafı çok güzel! 😻', time: '1sa', unread: 0, messages: [
-    { id: 'm1', text: 'O fotoğrafı nereden çektiniz?', fromMe: true, time: '09:00' },
-    { id: 'm2', text: 'Fotoğrafı çok güzel! 😻', fromMe: false, time: '09:30' },
-  ]},
-  { id: 'd3', username: 'boncuk_parrot', avatar: 'https://picsum.photos/seed/colorful_bird_avatar/100/100', lastMessage: 'Teşekkürler! 🦜', time: '3sa', unread: 1, messages: [
-    { id: 'm1', text: 'Boncuk çok tatlı!', fromMe: true, time: '08:00' },
-    { id: 'm2', text: 'Teşekkürler! 🦜', fromMe: false, time: '08:15' },
-  ]},
-];
-
 const STORIES = [
-  { id: '1', name: 'Pamuk', img: 'https://picsum.photos/seed/white_cat/100/100' },
-  { id: '2', name: 'Zeytin', img: 'https://picsum.photos/seed/black_dog/100/100' },
-  { id: '3', name: 'Tarçın', img: 'https://picsum.photos/seed/orange_cat/100/100' },
-  { id: '4', name: 'Duman', img: 'https://picsum.photos/seed/grey_kitty/100/100' },
-  { id: '5', name: 'Sütlaç', img: 'https://picsum.photos/seed/white_puppy/100/100' },
-  { id: '6', name: 'Çakıl', img: 'https://picsum.photos/seed/brown_dog/100/100' },
+  { id: '1', name: 'Pamuk', img: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce?auto=format&fit=crop&q=80&w=150&h=150' },
+  { id: '2', name: 'Zeytin', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=150&h=150' },
+  { id: '3', name: 'Tarçın', img: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&q=80&w=150&h=150' },
+  { id: '4', name: 'Duman', img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=150&h=150' },
+  { id: '5', name: 'Sütlaç', img: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=150&h=150' },
+  { id: '6', name: 'Çakıl', img: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150&h=150' },
 ];
 
 export default function PetstagramPage() {
@@ -134,43 +108,6 @@ export default function PetstagramPage() {
       }
       return post;
     }));
-  };
-
-  // DM states
-  const [isDmOpen, setIsDmOpen] = useState(false);
-  const [dmConversations, setDmConversations] = useState(DUMMY_DMS);
-  const [activeDm, setActiveDm] = useState<DmConversation | null>(null);
-  const [dmInput, setDmInput] = useState('');
-
-  // New Post states
-  const [isNewPostOpen, setIsNewPostOpen] = useState(false);
-  const [newPostCaption, setNewPostCaption] = useState('');
-  const [newPostImageUrl, setNewPostImageUrl] = useState('');
-
-  const handleSendDm = () => {
-    if (!dmInput.trim() || !activeDm) return;
-    const newMsg = { id: `m${Date.now()}`, text: dmInput, fromMe: true, time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) };
-    setDmConversations(prev => prev.map(c => c.id === activeDm.id ? { ...c, messages: [...c.messages, newMsg], lastMessage: dmInput, time: 'şimdi' } : c));
-    setActiveDm(prev => prev ? { ...prev, messages: [...prev.messages, newMsg], lastMessage: dmInput } : null);
-    setDmInput('');
-  };
-
-  const handleNewPost = () => {
-    if (!newPostCaption.trim()) return;
-    const newPost: Post = {
-      id: `${Date.now()}`,
-      username: 'ben_petstagram',
-      avatar: 'https://picsum.photos/seed/my_pet_avatar/100/100',
-      image: newPostImageUrl || `https://picsum.photos/seed/${Date.now()}/600/600`,
-      likes: 0,
-      caption: newPostCaption,
-      isLiked: false,
-      time: language === 'tr' ? 'az önce' : language === 'en' ? 'just now' : 'ahora mismo'
-    };
-    setPosts(prev => [newPost, ...prev]);
-    setNewPostCaption('');
-    setNewPostImageUrl('');
-    setIsNewPostOpen(false);
   };
 
   return (

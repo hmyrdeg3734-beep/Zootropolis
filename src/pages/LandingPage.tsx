@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PawPrint, Map as MapIcon, Heart, Search, X, Info, Cat, Dog, Bird, Turtle, Moon, Sun, Languages, Stethoscope, ShoppingBag, Scissors, Warehouse, Hotel, Phone, Camera, Shield, MessageSquarePlus, Sparkles, Send, ShoppingCart, Calendar, UserPlus, ArrowDownToLine, Clock, GraduationCap, Newspaper, Headset, Mail, BookOpen, AlertCircle, Instagram, Twitter, Calculator, CalendarDays, IdCard } from 'lucide-react';
+import { PawPrint, Map as MapIcon, MapPin, Heart, Search, X, Info, Cat, Dog, Bird, Turtle, Moon, Sun, Languages, Stethoscope, ShoppingBag, Scissors, Warehouse, Hotel, Phone, Camera, Shield, MessageSquarePlus, Sparkles, Send, ShoppingCart, Calendar, UserPlus, ArrowDownToLine, Clock, GraduationCap, Newspaper, Headset, Mail, BookOpen, AlertCircle, Calculator, CalendarDays, IdCard, Bot, Navigation, Star, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../translations';
+import { ISTANBUL_DISTRICTS, DISTRICT_COORDINATES } from '../constants';
+import { SAMPLE_POINTS } from '../data/samplePoints';
 
 const FloatingAnimal = ({ children, delay = 0, duration = 20, initialX = 0, initialY = 0 }: { children: React.ReactNode, delay?: number, duration?: number, initialX?: number | string, initialY?: number | string }) => (
   <motion.div
@@ -45,30 +47,46 @@ export default function LandingPage() {
   const [isEventsModalOpen, setIsEventsModalOpen] = useState(false);
   const [isFoodCalcModalOpen, setIsFoodCalcModalOpen] = useState(false);
   const [isPetIdModalOpen, setIsPetIdModalOpen] = useState(false);
+  const [districtSearch, setDistrictSearch] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [districtCategoryFilter, setDistrictCategoryFilter] = useState<string>('Hepsi');
+  const districtResultsRef = useRef<HTMLDivElement | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || document.documentElement.classList.contains('dark');
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        return savedTheme === 'dark';
+      }
+      return document.documentElement.classList.contains('dark');
     }
     return false;
   });
 
   const [language, setLanguage] = useState<Language>(() => {
-    return (localStorage.getItem('lang') as Language) || 'tr';
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('lang') as Language) || 'tr';
+    }
+    return 'tr';
   });
 
   const t = translations[language];
 
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
+  };
 
   useEffect(() => {
     localStorage.setItem('lang', language);
@@ -202,7 +220,7 @@ export default function LandingPage() {
         </button>
         
         <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
+          onClick={toggleDarkMode}
           className="flex items-center gap-2 bg-white/80 dark:bg-blue-950/80 backdrop-blur-sm border-2 border-amber-100 dark:border-blue-900 px-5 py-2.5 rounded-full font-bold text-amber-700 dark:text-blue-300 hover:bg-amber-50 dark:hover:bg-blue-900 transition-all shadow-sm hover:shadow-lg active:scale-95 whitespace-nowrap"
         >
           {isDarkMode ? <Sun size={20} className="text-amber-500" /> : <Moon size={20} className="text-blue-500" />}
@@ -294,14 +312,20 @@ export default function LandingPage() {
             { key: 'events', icon: CalendarDays, color: 'bg-orange-100', text: 'text-orange-600', dark: 'dark:bg-orange-950/40 dark:text-orange-400', category: 'etkinlik' },
             { key: 'foodCalc', icon: Calculator, color: 'bg-emerald-100', text: 'text-emerald-600', dark: 'dark:bg-emerald-950/40 dark:text-emerald-400', category: 'hesaplayici' },
             { key: 'petId', icon: IdCard, color: 'bg-yellow-100', text: 'text-yellow-600', dark: 'dark:bg-yellow-950/40 dark:text-yellow-400', category: 'kimlik' },
+            { key: 'assistant', icon: Bot, color: 'bg-amber-100', text: 'text-amber-600', dark: 'dark:bg-amber-950/40 dark:text-amber-400', category: 'assistant' },
           ].map((service, index) => (
             <motion.div
+              layout
               key={service.key}
+              onClick={() => {
+                if (service.key === 'assistant') navigate('/assistant');
+                if (service.key === 'allDistricts') navigate('/districts');
+              }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white/80 dark:bg-blue-950/40 backdrop-blur-sm p-6 rounded-3xl border-2 border-amber-50 dark:border-blue-900 transition-all shadow-sm group text-center relative"
+              className={`bg-white/80 dark:bg-blue-950/40 backdrop-blur-sm p-6 rounded-3xl border-2 border-amber-50 dark:border-blue-900 transition-all shadow-sm group text-center relative ${(service.key === 'assistant' || service.key === 'allDistricts') ? 'cursor-pointer hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10' : ''}`}
             >
               <div className={`w-16 h-16 ${service.color} ${service.dark} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
                 <service.icon size={32} />
@@ -309,6 +333,14 @@ export default function LandingPage() {
               <h3 className="font-bold text-gray-800 dark:text-blue-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                 {(t as any)[service.key]}
               </h3>
+              {service.key === 'assistant' && (
+                <div className="mt-3">
+                  <p className="text-[10px] text-gray-500 dark:text-blue-300 leading-tight mb-3">{(t as any).assistantDesc}</p>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white px-4 py-2 rounded-full shadow-lg shadow-amber-500/20 group-hover:bg-amber-600 transition-colors inline-block">
+                     {(t as any).askAssistant}
+                  </span>
+                </div>
+              )}
               {service.key === 'vets' && (
                 <button
                   onClick={(e) => {
@@ -455,6 +487,318 @@ export default function LandingPage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Districts Section */}
+        <div className="mt-24 mb-16">
+          <div className="flex flex-col items-center mb-10">
+             <div className="bg-indigo-100 dark:bg-indigo-900/50 p-4 rounded-2xl text-indigo-600 dark:text-indigo-400 mb-4">
+                <Navigation size={32} />
+             </div>
+             <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">İstanbul'un Tüm İlçeleri</h2>
+             <p className="text-gray-500 dark:text-indigo-300 font-bold uppercase text-[10px] tracking-[0.2em] mt-2">Dostunuz İçin Şehir Sizinle</p>
+          </div>
+
+          <div className="relative mb-8 max-w-xl mx-auto">
+             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+             <input 
+               type="text" 
+               placeholder="İlçe ara... (örn: Beşiktaş)"
+               value={districtSearch}
+               onChange={(e) => setDistrictSearch(e.target.value)}
+               className="w-full bg-white/60 dark:bg-blue-900/40 backdrop-blur-md border-2 border-amber-50 dark:border-blue-900 py-4 pl-12 pr-4 rounded-3xl text-xs font-bold focus:outline-none focus:border-amber-500 transition-all shadow-sm dark:text-white"
+             />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+             {ISTANBUL_DISTRICTS.filter(d => d.toLowerCase().includes(districtSearch.toLowerCase())).map((district, idx) => (
+               <motion.button
+                 key={district}
+                 whileHover={{ scale: 1.05, y: -5 }}
+                 whileTap={{ scale: 0.95 }}
+                 onClick={() => {
+                   setSelectedDistrict(district);
+                   setDistrictCategoryFilter('Hepsi');
+                   setTimeout(() => {
+                     districtResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                   }, 100);
+                 }}
+                 className={`p-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 hover:shadow-xl hover:shadow-amber-500/10 transition-all group backdrop-blur-sm ${
+                   selectedDistrict === district 
+                     ? 'bg-amber-150/40 border-amber-500 dark:bg-amber-950/40 dark:border-amber-400 shadow-md ring-2 ring-amber-500/20' 
+                     : 'bg-white/80 dark:bg-blue-950/40 border-amber-50 dark:border-blue-900 hover:border-amber-500'
+                 }`}
+               >
+                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${selectedDistrict === district ? 'bg-amber-100 dark:bg-amber-900/50 scale-110' : 'bg-amber-50 dark:bg-amber-950/30 group-hover:scale-110'}`}>
+                   <MapPin size={16} className={selectedDistrict === district ? "text-amber-700 dark:text-amber-300" : "text-amber-600 dark:text-amber-400"} />
+                 </div>
+                 <span className={`text-[10px] font-black uppercase tracking-tighter ${selectedDistrict === district ? 'text-amber-600 dark:text-amber-400' : 'text-gray-800 dark:text-blue-100'}`}>
+                   {district}
+                 </span>
+               </motion.button>
+             ))}
+          </div>
+
+          {/* District Listing Results Anchor */}
+          <div ref={districtResultsRef} className="scroll-mt-24">
+            <AnimatePresence>
+              {selectedDistrict && (() => {
+                const filteredByDistrictAndCategory = SAMPLE_POINTS.filter(point => {
+                  const addressLower = point.address.toLocaleLowerCase('tr');
+                  const districtLower = selectedDistrict.toLocaleLowerCase('tr');
+                  const matchesDistrict = addressLower.includes(districtLower);
+                  
+                  if (!matchesDistrict) return false;
+                  if (districtCategoryFilter === 'Hepsi') return true;
+                  return point.category === districtCategoryFilter;
+                });
+
+                const allPointsInDistrict = SAMPLE_POINTS.filter(point => 
+                  point.address.toLocaleLowerCase('tr').includes(selectedDistrict.toLocaleLowerCase('tr'))
+                );
+
+                const uniqueCategories = ['Hepsi', ...Array.from(new Set(allPointsInDistrict.map(p => p.category)))];
+
+                const getCategoryBadgeClass = (category: string) => {
+                  switch (category) {
+                    case 'Veteriner': return 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900/50';
+                    case 'Barınak': return 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900/50';
+                    case 'Petshop': return 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900/50';
+                    case 'Otel': return 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-900/50';
+                    case 'Kuaför': return 'bg-pink-50 text-pink-700 border-pink-100 dark:bg-pink-950/50 dark:text-pink-300 dark:border-pink-900/50';
+                    default: return 'bg-gray-50 text-gray-700 border-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+                  }
+                };
+
+                const getCategoryIcon = (category: string) => {
+                  switch (category) {
+                    case 'Veteriner': return <Stethoscope size={14} />;
+                    case 'Barınak': return <Warehouse size={14} />;
+                    case 'Petshop': return <ShoppingBag size={14} />;
+                    case 'Otel': return <Hotel size={14} />;
+                    case 'Kuaför': return <Scissors size={14} />;
+                    default: return <PawPrint size={14} />;
+                  }
+                };
+
+                const getPlaceImg = (category: string, id: string) => {
+                  const numId = parseInt(id.replace(/\D/g, ''), 10) || 0;
+                  const images: Record<string, string[]> = {
+                    "Veteriner": [
+                      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=400"
+                    ],
+                    "Barınak": [
+                      "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1484156818044-c040038b0719?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=400"
+                    ],
+                    "Petshop": [
+                      "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1535268647977-a403b69fc756?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1608096299210-db7e38487075?auto=format&fit=crop&q=80&w=400"
+                    ],
+                    "Otel": [
+                      "https://images.unsplash.com/photo-1596492784531-6e6eb5ea9993?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1541599540903-216a46ca1ad0?auto=format&fit=crop&q=80&w=400"
+                    ],
+                    "Kuaför": [
+                      "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&q=80&w=400",
+                      "https://images.unsplash.com/photo-1524510981186-17aac60f679c?auto=format&fit=crop&q=80&w=400"
+                    ]
+                  };
+                  const list = images[category] || images["Veteriner"];
+                  const index = numId % list.length;
+                  return list[index];
+                };
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.5 }}
+                    className="mt-12 bg-white/70 dark:bg-[#0b1329] backdrop-blur-md p-6 md:p-10 rounded-[2.5rem] border-4 border-amber-100/60 dark:border-blue-900/40 shadow-xl"
+                  >
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-6 border-b border-gray-100 dark:border-blue-900/45">
+                      <div>
+                        <div className="flex items-center gap-2.5 mb-1.5">
+                          <span className="text-xs font-black uppercase tracking-[0.15em] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-900/30">
+                            {selectedDistrict} İLÇESİ
+                          </span>
+                          <span className="text-xs font-bold text-gray-500 dark:text-blue-300">
+                            ({allPointsInDistrict.length} Kayıtlı Konum)
+                          </span>
+                        </div>
+                        <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                          Dostunuz İçin {selectedDistrict} Mekanları
+                        </h3>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            const coords = DISTRICT_COORDINATES[selectedDistrict] || [41.0082, 28.9784];
+                            navigate('/map', { state: { center: coords, districtName: selectedDistrict } });
+                          }}
+                          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-5 py-3 rounded-2xl text-xs shadow-md shadow-amber-500/15 transition-all group"
+                        >
+                          <MapIcon size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                          Hepsini Haritada Gör
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedDistrict(null)}
+                          className="flex items-center gap-2 bg-gray-100 dark:bg-blue-900/40 text-gray-700 dark:text-blue-200 hover:bg-gray-200 dark:hover:bg-blue-850 font-extrabold px-4 py-3 rounded-2xl text-xs transition-all"
+                        >
+                          <X size={14} />
+                          Kapat
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Category filter buttons */}
+                    {uniqueCategories.length > 2 && (
+                      <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 -mx-4 px-4 scrollbar-none">
+                        {uniqueCategories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setDistrictCategoryFilter(cat)}
+                            className={`px-4 py-2.5 rounded-full text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap border-2 ${
+                              districtCategoryFilter === cat
+                                ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/15 scale-105'
+                                : 'bg-white dark:bg-blue-950/60 border-gray-100 dark:border-blue-900 text-gray-700 dark:text-blue-200 hover:bg-amber-50 dark:hover:bg-blue-900/40'
+                            }`}
+                          >
+                            {cat !== 'Hepsi' && getCategoryIcon(cat)}
+                            {cat === 'Hepsi' ? 'Tüm Kategoriler' : cat === 'Veteriner' ? 'Veteriner Hekimler' : cat === 'Petshop' ? 'Petshoplar' : cat === 'Kuaför' ? 'Kuaförler' : cat === 'Shelter' ? 'Barınaklar' : `${cat}ler`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Places list */}
+                    {filteredByDistrictAndCategory.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50/50 dark:bg-blue-950/15 rounded-3xl border border-dashed border-gray-200 dark:border-blue-900/50">
+                        <PawPrint size={48} className="mx-auto text-gray-300 dark:text-blue-900 mb-3 animate-pulse" />
+                        <p className="font-bold text-gray-600 dark:text-blue-200">
+                          Bu kategoride kayıtlı yer bulunamadı.
+                        </p>
+                        <p className="text-xs text-gray-450 dark:text-blue-400 mt-1">
+                          Harita üzerinden yeni yer önerisinde bulunabilirsiniz!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredByDistrictAndCategory.map(point => (
+                          <motion.div
+                            layout
+                            key={point.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-white dark:bg-blue-950/20 rounded-[2rem] border border-gray-100 dark:border-blue-900/60 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-500/50 hover:dark:border-amber-400/50 transition-all flex flex-col group h-full"
+                          >
+                            {/* Image container */}
+                            <div className="relative h-48 w-full overflow-hidden bg-gray-100 dark:bg-blue-950/30">
+                              <img
+                                src={getPlaceImg(point.category, point.id)}
+                                alt={point.name}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              {/* Layer gradient */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
+
+                              {/* Badge */}
+                              <span className={`absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border-2 shadow-md flex items-center gap-1.5 ${getCategoryBadgeClass(point.category)}`}>
+                                {getCategoryIcon(point.category)}
+                                {point.category}
+                              </span>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-5 flex-grow flex flex-col justify-between">
+                              <div>
+                                {/* Rating */}
+                                <div className="flex items-center gap-1.5 mb-2.5">
+                                  <div className="flex text-amber-500">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star 
+                                        key={i} 
+                                        size={12} 
+                                        className={i < Math.floor(point.rating || 4.5) ? "fill-current text-amber-400" : "opacity-30"} 
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs font-black text-gray-800 dark:text-blue-100 ml-1">
+                                    {point.rating || 4.7}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 dark:text-blue-300">
+                                    ({point.reviewCount || 15} Yorum)
+                                  </span>
+                                </div>
+
+                                <h4 className="text-lg font-black text-gray-900 dark:text-white leading-tight mb-2 group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
+                                  {point.name}
+                                </h4>
+
+                                <p className="text-xs text-gray-500 dark:text-blue-200 line-clamp-2 mb-4">
+                                  {point.address}
+                                </p>
+                              </div>
+
+                              <div className="pt-4 border-t border-gray-50 dark:border-blue-900/30 space-y-2.5 text-xs text-gray-600 dark:text-blue-200">
+                                <div className="flex items-center gap-2">
+                                  <Clock size={14} className="text-amber-500 shrink-0" />
+                                  <span className="font-semibold">{point.hours || 'Belirtilmemiş'}</span>
+                                </div>
+
+                                {point.phone && (
+                                  <div className="flex items-center gap-2">
+                                    <Phone size={14} className="text-emerald-500 shrink-0" />
+                                    <a href={`tel:${point.phone}`} className="font-bold hover:underline font-mono">
+                                      {point.phone}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Actions footer */}
+                              <div className="flex items-center gap-2 mt-5 pt-3">
+                                <button
+                                  onClick={() => {
+                                    navigate('/map', { state: { selectedPoint: point } });
+                                  }}
+                                  className="flex-1 flex items-center justify-center gap-1.5 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-200 text-white py-3.5 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                  Haritada Gör
+                                  <ExternalLink size={12} />
+                                </button>
+                                
+                                {point.phone && (
+                                  <a
+                                    href={`tel:${point.phone}`}
+                                    className="flex items-center justify-center border-2 border-emerald-100 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 p-3 rounded-xl transition-all hover:scale-[1.02]"
+                                    title="Telefonla Ara"
+                                  >
+                                    <Phone size={14} />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
 
       {/* Animal Rights Section */}
@@ -507,7 +851,7 @@ export default function LandingPage() {
                <div className="p-6 rounded-3xl border-2 border-dashed border-emerald-200 dark:border-emerald-900 flex flex-col items-center justify-center text-center bg-gray-50/50 dark:bg-transparent">
                   <PawPrint size={48} className="text-emerald-200 dark:text-emerald-900 mb-4" />
                   <p className="text-xs font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest">
-                    Zootropolis Farkındalık
+                    PatiKa Farkındalık
                   </p>
                </div>
             </div>
@@ -515,7 +859,7 @@ export default function LandingPage() {
         </motion.div>
       </div>
 
-      {/* Emergency & First Aid Section */}
+      {/* Recommended Veterinarians Section */}
       <div className="w-full max-w-6xl mx-auto px-6 pb-24 relative z-10">
         <motion.div
            initial={{ opacity: 0, y: 30 }}
@@ -525,16 +869,123 @@ export default function LandingPage() {
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b-2 border-amber-50 dark:border-blue-900/50 pb-8 mb-10">
             <div className="flex items-center gap-4">
-              <div className="bg-rose-100 dark:bg-rose-950/40 p-4 rounded-2xl text-rose-600 dark:text-rose-400">
+              <div className="bg-amber-100 dark:bg-blue-900/40 p-4 rounded-2xl text-amber-600 dark:text-blue-400">
                 <Stethoscope size={40} />
               </div>
               <div>
-                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">{t.firstAid}</h2>
-                <p className="text-gray-500 dark:text-blue-300 font-medium">Acil durumlarda hayat kurtaran bilgiler ve iletişim numaraları</p>
+                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                  {language === 'tr' ? "Önerilen Uzman Veteriner Hekimler" : language === 'en' ? "Recommended Expert Veterinarians" : "Veterinarios Expertos Recomendados"}
+                </h2>
+                <p className="text-gray-500 dark:text-blue-300 font-medium">
+                  {language === 'tr' ? "Acil durumlarda doğrudan iletişime geçebileceğiniz alanında uzman hekimlerimiz" : language === 'en' ? "Our specialists in their fields whom you can contact directly in emergencies" : "Nuestros especialistas en sus campos con quienes puede contactar directamente en emergencias"}
+                </p>
               </div>
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                id: "vet-aylin",
+                name: "Dr. Aylin Yılmaz",
+                specialty: {
+                  tr: "Acil Tıp & Travmatoloji Uzmanı",
+                  en: "Emergency & Traumatology Specialist",
+                  es: "Especialista en Urgencias y Traumatología"
+                },
+                phone: "0532 123 45 67",
+                phoneLink: "tel:05321234567",
+                color: "border-blue-100 dark:border-blue-900/50 hover:border-blue-300",
+                badgeColor: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400",
+                initials: "AY"
+              },
+              {
+                id: "vet-murat",
+                name: "Dr. Murat Kaya",
+                specialty: {
+                  tr: "Dahiliye & Cerrahi Uzmanı",
+                  en: "Internal Medicine & Surgery Specialist",
+                  es: "Especialista en Medicina Interna y Cirugía"
+                },
+                phone: "0544 987 65 43",
+                phoneLink: "tel:05449876543",
+                color: "border-emerald-100 dark:border-emerald-900/50 hover:border-emerald-300",
+                badgeColor: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400",
+                initials: "MK"
+              },
+              {
+                id: "vet-elif",
+                name: "Dr. Elif Demir",
+                specialty: {
+                  tr: "Kedi & Köpek Davranış Uzmanı",
+                  en: "Feline & Canine Behavior Specialist",
+                  es: "Especialista en Comportamiento Felino y Canino"
+                },
+                phone: "0505 456 78 90",
+                phoneLink: "tel:05054567890",
+                color: "border-purple-100 dark:border-purple-900/50 hover:border-purple-300",
+                badgeColor: "bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400",
+                initials: "ED"
+              }
+            ].map((vet) => (
+              <motion.div 
+                key={vet.id} 
+                whileHover={{ y: -5 }}
+                className={`p-6 rounded-3xl bg-white dark:bg-blue-900/20 border-2 ${vet.color} transition-all shadow-sm flex flex-col justify-between`}
+              >
+                <div>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg shadow-inner shrink-0 ${vet.badgeColor}`}>
+                      {vet.initials}
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-xl text-gray-900 dark:text-white leading-tight">
+                        {vet.name}
+                      </h3>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-blue-300/70 mt-0.5 uppercase tracking-wider">
+                        {vet.specialty[language as 'tr' | 'en' | 'es'] || vet.specialty.tr}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-2xl bg-gray-50 dark:bg-blue-950/30 border border-gray-100 dark:border-blue-900/30 mb-6">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-blue-200 text-sm">
+                      <Phone size={16} className="text-amber-500" />
+                      <span className="font-mono font-medium">{vet.phone}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <a 
+                  href={vet.phoneLink} 
+                  className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white py-3.5 rounded-2xl font-extrabold transition-all shadow-lg active:scale-95 text-sm"
+                >
+                  <Phone size={18} />
+                  {language === 'tr' ? "Hemen Ara" : language === 'en' ? "Call Now" : "Llamar Ahora"}
+                </a>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Elegant Divider */}
+          <hr className="my-12 border-dashed border-gray-200 dark:border-blue-900/40" />
+
+          {/* First Aid Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 mb-10">
+            <div className="flex items-center gap-4">
+              <div className="bg-rose-100 dark:bg-rose-950/40 p-4 rounded-2xl text-rose-600 dark:text-rose-400">
+                <AlertCircle size={40} />
+              </div>
+              <div>
+                <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{t.firstAid}</h3>
+                <p className="text-gray-500 dark:text-blue-300 font-medium">
+                  {language === 'tr' ? "Acil durumlarda hayat kurtaran bilgiler ve ilk yardım müdahaleleri" : language === 'en' ? "Life-saving info and emergency first aid guidelines" : "Información para salvar vidas y pautas de primeros auxilios de emergencia"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* First Aid Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             {[
               { titleKey: 'choking', descKey: 'chokingDesc' },
@@ -551,10 +1002,10 @@ export default function LandingPage() {
                 whileHover={{ y: -5 }}
                 className="p-5 rounded-3xl bg-white dark:bg-blue-900/20 border border-amber-100 dark:border-blue-800/40 hover:border-amber-300 dark:hover:border-blue-500 transition-all shadow-sm"
               >
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2 text-base">
                   <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></div>
                   {(t as any)[item.titleKey]}
-                </h3>
+                </h4>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-blue-100 leading-relaxed">
                   {(t as any)[item.descKey]}
                 </p>
@@ -562,8 +1013,9 @@ export default function LandingPage() {
             ))}
           </div>
 
+          {/* Emergency Helplines and Warning Box */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-8 rounded-3xl bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-100 dark:border-rose-900/50 relative overflow-hidden group">
+            <div className="p-8 rounded-3xl bg-rose-50 dark:bg-rose-950/25 border-2 border-rose-100 dark:border-rose-900/30 relative overflow-hidden group">
               <div className="absolute -right-8 -bottom-8 text-rose-200 dark:text-rose-900/20 opacity-20 transform -rotate-12 group-hover:scale-110 transition-transform">
                 <Phone size={160} />
               </div>
@@ -578,12 +1030,12 @@ export default function LandingPage() {
               <div className="space-y-4 relative z-10">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-rose-950/40 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/40 shadow-sm transition-transform hover:scale-[1.01]">
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white text-lg">{t.animalAmbulance}</p>
+                    <span className="font-bold text-gray-900 dark:text-white text-lg">{t.animalAmbulance}</span>
                     <p className="text-sm text-rose-600 dark:text-rose-400 font-medium">{t.emergencyPhone}</p>
                   </div>
                   <a 
                     href="tel:153" 
-                    className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95"
+                    className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 whitespace-nowrap"
                   >
                     <Phone size={20} /> 153
                   </a>
@@ -591,7 +1043,7 @@ export default function LandingPage() {
                 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-rose-950/40 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/40 shadow-sm transition-transform hover:scale-[1.01]">
                   <div>
-                    <p className="font-bold text-gray-900 dark:text-white text-lg">{t.municipality}</p>
+                    <span className="font-bold text-gray-900 dark:text-white text-lg">{t.municipality}</span>
                     <p className="text-sm text-rose-600 dark:text-rose-400 font-medium">444 0 875</p>
                   </div>
                   <a 
@@ -604,14 +1056,12 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="p-8 rounded-3xl bg-amber-50 dark:bg-blue-900/20 border-2 border-amber-100 dark:border-blue-900/50 flex flex-col justify-center text-center">
-              <div className="flex justify-center mb-4">
-                <div className="bg-amber-100 dark:bg-blue-800/40 p-4 rounded-full text-amber-600 dark:text-blue-400">
-                  <Info size={40} />
-                </div>
+            <div className="p-8 rounded-3xl bg-amber-50 dark:bg-blue-900/20 border-2 border-amber-100 dark:border-blue-900/50 flex flex-col justify-center text-center items-center">
+              <div className="bg-amber-100 dark:bg-blue-800/40 p-4 rounded-full text-amber-600 dark:text-blue-400 mb-4 inline-block">
+                <Info size={40} />
               </div>
               <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Önemli Hatırlatma</h4>
-              <p className="text-amber-800 dark:text-blue-200 font-medium leading-relaxed italic">
+              <p className="text-amber-800 dark:text-blue-200 font-medium leading-relaxed italic max-w-md">
                 {language === 'tr' ? "Bu rehber sadece acil durumlar içindir. Hiç vakit kaybetmeden en yakın veterinere başvurun. Hayvanın durumunda bir değişiklik fark ederseniz not almayı unutmayın." : language === 'en' ? "This guide is for emergencies only. Consult the nearest veterinarian without any delay. Don't forget to take notes if you notice a change in the animal's condition." : "Esta guía es solo para emergencias. Consulte al veterinario más cercano sin demora alguna. No olvide tomar notas si nota un cambio en la condición del animal."}
               </p>
             </div>
@@ -723,7 +1173,7 @@ export default function LandingPage() {
                     </a>
 
                     <a 
-                      href="mailto:destek@zootropolis.com" 
+                      href="mailto:destek@patika.com" 
                       className="flex items-center gap-4 p-5 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border-2 border-transparent hover:border-emerald-200 transition-all group"
                     >
                        <div className="bg-white dark:bg-blue-900 p-3 rounded-xl shadow-sm text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
@@ -731,7 +1181,7 @@ export default function LandingPage() {
                        </div>
                        <div className="text-left">
                           <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest">{(t as any).mailUs}</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">destek@zootropolis.com</p>
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">destek@patika.com</p>
                        </div>
                     </a>
                  </div>
@@ -946,7 +1396,7 @@ export default function LandingPage() {
 
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                      { date: '25 Nisan', title: 'Toplu Aşılama Günü', loc: 'Üsküdar Sahil Park', color: 'bg-blue-50', icon: Stethoscope },
+                      { date: '25 Nisan', title: 'Toplu Aşılama Günü', loc: 'Anadolu Yakası Sahil Parkı', color: 'bg-blue-50', icon: Stethoscope },
                       { date: '2 Mayıs', title: 'Pati Festivali', loc: 'Millet Bahçesi', color: 'bg-amber-50', icon: Sparkles },
                       { date: '15 Mayıs', title: 'Barınak Gönüllü Günü', loc: 'Merkez Barınak', color: 'bg-green-50', icon: Heart }
                     ].map((ev, i) => (
@@ -1077,7 +1527,7 @@ export default function LandingPage() {
                              <Cat size={24} />
                           </div>
                           <div className="text-[10px] font-black text-amber-500 tracking-tighter uppercase leading-none">
-                             Zootropolis<br/>Passport
+                             PatiKa<br/>Passport
                           </div>
                        </div>
                        <div className="space-y-3">
@@ -1304,7 +1754,7 @@ export default function LandingPage() {
                     <div className="space-y-2">
                        <label className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{(t as any).selectVet}</label>
                        <select required className="w-full px-6 py-3 rounded-2xl bg-gray-50 dark:bg-blue-900/30 border-2 border-blue-100 dark:border-blue-800 outline-none focus:border-blue-400 transition-all appearance-none cursor-pointer">
-                          <option value="uskudar-vet">Üsküdar Veteriner Kliniği</option>
+                          <option value="anadolu-vet">Anadolu Yakası Veteriner Kliniği</option>
                           <option value="pati-dostu">Pati Dostu Sağlık Merkezi</option>
                           <option value="mavi-pati">Mavi Pati Hayvan Hastanesi</option>
                           <option value="merkez-vet">Merkez Veteriner Polikliniği</option>
@@ -1474,7 +1924,7 @@ export default function LandingPage() {
                     <div className="space-y-2">
                        <label className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">{(t as any).targetShelter}</label>
                        <select required className="w-full px-6 py-3 rounded-2xl bg-gray-50 dark:bg-blue-900/30 border-2 border-amber-100 dark:border-blue-800 outline-none focus:border-amber-400 transition-all appearance-none cursor-pointer">
-                          <option value="uskudar">Üsküdar Belediyesi Barınağı</option>
+                          <option value="anadolu">Anadolu Yakası Belediyeleri Barınağı</option>
                           <option value="huzur">Huzur Pati Barınağı</option>
                           <option value="gokturk">Göktürk Sokak Hayvanları Merkezi</option>
                        </select>
@@ -1563,7 +2013,7 @@ export default function LandingPage() {
                        <label className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">{(t as any).selectHotel}</label>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[
-                            { name: 'Üsküdar Pati Otel', price: '450 ₺ / Gün' },
+                            { name: 'Anadolu Yakası Pati Otel', price: '450 ₺ / Gün' },
                             { name: 'Mavi Rüya Pet Resort', price: '600 ₺ / Gün' },
                             { name: 'Saray Yavrusu Kedi Evi', price: '350 ₺ / Gün' },
                             { name: 'Mutlu Kuyruklar Hotel', price: '500 ₺ / Gün' }
@@ -1652,11 +2102,11 @@ export default function LandingPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[
                     { id: 1, name: 'Premium Kedi Maması', category: (t as any).food, price: '850 ₺', img: 'https://picsum.photos/seed/catfood/400/400', shop: 'Pati Sarayı' },
-                    { id: 2, name: 'Renkli İp Oyuncak', category: (t as any).toys, price: '120 ₺', img: 'https://picsum.photos/seed/pettoy/400/400', shop: 'Üsküdar Pet Dünyası' },
+                    { id: 2, name: 'Renkli İp Oyuncak', category: (t as any).toys, price: '120 ₺', img: 'https://picsum.photos/seed/pettoy/400/400', shop: 'Anadolu Yakası Pet Dünyası' },
                     { id: 3, name: 'Voleybol Topu Desenli Yatak', category: (t as any).accessories, price: '450 ₺', img: 'https://picsum.photos/seed/petbed/400/400', shop: 'Mavi Pati' },
                     { id: 4, name: 'Vitamin Kompleksi', category: (t as any).health, price: '320 ₺', img: 'https://picsum.photos/seed/pethealth/400/400', shop: 'Pet Dünyası' },
                     { id: 5, name: 'Sızdırmaz Mama Kabı', category: (t as any).accessories, price: '180 ₺', img: 'https://picsum.photos/seed/petbowl/400/400', shop: 'Pati Sarayı' },
-                    { id: 6, name: 'Tüy Toplayıcı Rulo', category: (t as any).accessories, price: '75 ₺', img: 'https://picsum.photos/seed/petbrush/400/400', shop: 'Üsküdar Pet' }
+                    { id: 6, name: 'Tüy Toplayıcı Rulo', category: (t as any).accessories, price: '75 ₺', img: 'https://picsum.photos/seed/petbrush/400/400', shop: 'Anadolu Yakası Pet' }
                   ].map((product) => (
                     <motion.div 
                       key={product.id}
@@ -1749,8 +2199,8 @@ export default function LandingPage() {
 
                  <div className="space-y-4">
                     {[
-                      { name: 'N&D Kedi Maması 10KG', price: '1.450 ₺', shop: 'Pati Sarayı - Üsküdar Merkez', isBest: true },
-                      { name: 'Royal Canin Kuru Mama', price: '980 ₺', shop: 'Üsküdar Pet Dünyası', isBest: false },
+                      { name: 'N&D Kedi Maması 10KG', price: '1.450 ₺', shop: 'Pati Sarayı - Anadolu Yakası', isBest: true },
+                      { name: 'Royal Canin Kuru Mama', price: '980 ₺', shop: 'Anadolu Yakası Pet Dünyası', isBest: false },
                       { name: 'Brit Care Somonlu 12KG', price: '1.200 ₺', shop: 'Mavi Pati Petshop', isBest: true },
                     ].map((item, idx) => (
                       <motion.div 
@@ -1903,27 +2353,6 @@ export default function LandingPage() {
                     </p>
                  </div>
 
-                 <div className="pt-4 border-t border-amber-100 dark:border-blue-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-sm font-bold text-gray-500 dark:text-blue-400">{(t as any).followUs}</p>
-                    <div className="flex gap-3">
-                       <a 
-                         href="https://instagram.com/zootropolis" 
-                         target="_blank" 
-                         rel="noopener noreferrer"
-                         className="flex items-center gap-2 bg-gradient-to-tr from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold hover:scale-105 transition-all text-sm shadow-md"
-                       >
-                          <Instagram size={18} /> Instagram
-                       </a>
-                       <a 
-                         href="https://twitter.com/zootropolis" 
-                         target="_blank" 
-                         rel="noopener noreferrer"
-                         className="flex items-center gap-2 bg-[#1DA1F2] text-white px-4 py-2 rounded-xl font-bold hover:scale-105 transition-all text-sm shadow-md"
-                       >
-                          <Twitter size={18} /> Twitter
-                       </a>
-                    </div>
-                 </div>
               </div>
             </motion.div>
           </motion.div>
